@@ -6,15 +6,15 @@ module.exports = app =>{
                      : moment().endOf('day').toDate
 
         app.db('tasks')
-            .where({userId: req.user.id})
+            .where({userId : req.user.id})
             .where('estimateAt', '<=' , date)
             .orderBy('estimateAt')
-            .the(tasks => res.json(tasks))
-            .cacth(err => res.status(400).json(err))
+            .then(tasks => res.json(tasks))
+            .catch(err => res.status(400).json(err))
     }
 
     const save = (req, res) => {
-        if(!req.body.desc.thim()){
+        if(!req.body.desc.trim()){
             return res.status(400).send('Descrição é um campo obrigatório')
         }
 
@@ -23,7 +23,7 @@ module.exports = app =>{
         app.db('tasks')
             .insert(req.body)
             .then(_ => res.status(204).send())
-            .cacth(err => res.status(400).json(err))
+            .catch(err => res.status(400).json(err))
     }
 
     const remove = (req, res) =>{
@@ -37,5 +37,31 @@ module.exports = app =>{
                 const msg = `Não foi encontrar task com id ${req.params.id}.`
                 res.status(400).send(msg)
             })
+            .cacth(err => res.status(400).json(err))
     }
+
+    const updateTaskDoneAt = ( req, res, doneAt) => {
+        app.db('tasks')
+            .where({ id: req.params.id, userID: req.user.id })
+            .update({ doneAt})
+            .then(_ => res.status(204).send())
+            .cacth(err => res.status(400).json(err))
+    }
+
+    const toggleTask =  ( req, res) => { 
+        app.db('tasks')
+            .where({ id: req.params.id, userId: req.user.id})
+            .first()
+            .then(task => {
+                if(!taks){
+                    const msg = `Task com id ${req.params.id}`
+                    return res.status(400).send(msg)
+                }
+
+                const doneAt = task.doneAt ? null : new Date()
+                updateTaskDoneAt(req, res, doneAt)
+            })
+    }
+
+    return { getTasks, save, remove, toggleTask}
 }
